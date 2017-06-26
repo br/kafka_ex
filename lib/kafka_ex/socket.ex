@@ -97,9 +97,11 @@ defmodule KafkaEx.Socket do
   defp extract_port(socket), do: socket.socket
 
   defp create_socket(host, port, true, socket_options) do
+    socket_options = socket_options ++ [{:keepalive, true}]
     :ssl.connect(host, port, socket_options)
   end
   defp create_socket(host, port, false, socket_options) do
+    socket_options = socket_options ++ [{:keepalive, true}]
     :gen_tcp.connect(host, port, socket_options)
   end
 end
