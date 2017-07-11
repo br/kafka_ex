@@ -315,14 +315,19 @@ defmodule KafkaEx.Server do
           broker -> case produce_request.required_acks do
             0 ->  NetworkClient.send_async_request(broker, produce_request_data)
             _ ->
-              response = broker
-               |> NetworkClient.send_sync_request(produce_request_data, sync_timeout())
-               |> Produce.parse_response
+              start = :os.timestamp()
+              response = NetworkClient.send_sync_request(broker, produce_request_data, sync_timeout())
+
+              stop = :os.timestamp()
+              duration = Float.round(:timer.now_diff(stop, start) / 1000, 3)
+
+              response = Produce.parse_response(response)
+
               case response do
                 [%KafkaEx.Protocol.Produce.Response{partitions: [%{error_code: :no_error, offset: offset, partition: _}], topic: topic}] when offset != nil ->
-                  {:ok, offset}
+                  {:ok, offset, duration}
                 _ ->
-                  {:error, response}
+                  {:error, response, duration}
               end
           end
         end
